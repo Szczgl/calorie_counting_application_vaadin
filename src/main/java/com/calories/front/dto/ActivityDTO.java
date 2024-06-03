@@ -11,5 +11,5 @@ public class ActivityDTO {
     private String description;
     private double consumedCalories;
     private Long userId;
-
+    private String source;
 }

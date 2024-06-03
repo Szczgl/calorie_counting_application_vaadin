@@ -32,14 +32,15 @@ public class RecipeApiClient {
                 .getBody();
     }
 
-    public void createRecipe(RecipeDTO recipeDTO) {
-        webClient.post()
+    public RecipeDTO createRecipe(RecipeDTO recipeDTO) {
+        return webClient.post()
                 .uri("/v1/recipes")
                 .accept(MediaType.APPLICATION_JSON)
                 .bodyValue(recipeDTO)
                 .retrieve()
-                .toBodilessEntity()
-                .block();
+                .toEntity(RecipeDTO.class)
+                .block()
+                .getBody();
     }
 
     public RecipeDTO updateRecipe(RecipeDTO recipeDTO, Long id) {

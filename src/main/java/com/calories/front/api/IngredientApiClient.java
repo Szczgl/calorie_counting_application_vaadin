@@ -32,14 +32,15 @@ public class IngredientApiClient {
                 .getBody();
     }
 
-    public void createIngredient(IngredientDTO ingredientDTO) {
-        webClient.post()
+    public IngredientDTO createIngredient(IngredientDTO ingredientDTO) {
+        return webClient.post()
                 .uri("/v1/ingredients")
                 .accept(MediaType.APPLICATION_JSON)
                 .bodyValue(ingredientDTO)
                 .retrieve()
-                .toBodilessEntity()
-                .block();
+                .toEntity(IngredientDTO.class)
+                .block()
+                .getBody();
     }
 
     public IngredientDTO updateIngredient(IngredientDTO ingredientDTO, Long id) {

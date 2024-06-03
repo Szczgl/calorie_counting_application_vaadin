@@ -34,14 +34,15 @@ public class UserApiClient {
                 .getBody();
     }
 
-    public void createUser(UserDTO userDTO) {
-        webClient.post()
+    public UserDTO createUser(UserDTO userDTO) {
+        return webClient.post()
                 .uri("/v1/users")
                 .accept(MediaType.APPLICATION_JSON)
                 .bodyValue(userDTO)
                 .retrieve()
-                .toBodilessEntity()
-                .block();
+                .toEntity(UserDTO.class)
+                .block()
+                .getBody();
     }
 
     public UserDTO updateUser(UserDTO userDTO, Long id) {

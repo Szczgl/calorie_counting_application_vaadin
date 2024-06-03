@@ -8,6 +8,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
 
+
 @Service
 public class ActivityApiClient {
 
@@ -32,14 +33,15 @@ public class ActivityApiClient {
                 .getBody();
     }
 
-    public void createActivity(ActivityDTO activityDTO) {
-        webClient.post()
+    public ActivityDTO createActivity(ActivityDTO activityDTO) {
+        return webClient.post()
                 .uri("/v1/activities")
                 .accept(MediaType.APPLICATION_JSON)
                 .bodyValue(activityDTO)
                 .retrieve()
-                .toBodilessEntity()
-                .block();
+                .toEntity(ActivityDTO.class)
+                .block()
+                .getBody();
     }
 
     public ActivityDTO updateActivity(ActivityDTO activityDTO, Long id) {

@@ -15,6 +15,7 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteParameters;
+import com.vaadin.flow.server.VaadinSession;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @Route("user-details/:userId")
@@ -52,6 +53,17 @@ public class UserView extends VerticalLayout implements BeforeEnterObserver {
 
         Button backToMain = new Button("Main menu");
         backToMain.addClickListener(event -> UI.getCurrent().navigate(MainView.class));
+
+//        Button addApiRecipe = new Button("Dodaj przepis");
+//        addApiRecipe.addClickListener(event -> {
+//            UI.getCurrent().navigate(RecipeApiView.class, new RouteParameters("userId", userId.toString()));
+//        });
+//
+//        Button addApiActivity = new Button("Dodaj aktywność");
+//        addApiActivity.addClickListener(event -> {
+//            VaadinSession.getCurrent().setAttribute("userId", userId);
+//            UI.getCurrent().navigate(ActivityApiView.class, new RouteParameters("userId", userId));
+//        });
 
         functions.add(edit, delete, backToMain);
         return functions;
