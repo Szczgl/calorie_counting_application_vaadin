@@ -2,23 +2,26 @@ package com.calories.front.views.user;
 
 import com.calories.front.api.UserApiClient;
 import com.calories.front.dto.UserDTO;
-import com.calories.front.views.MainView;
-import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteParameters;
-import com.vaadin.flow.server.VaadinSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.vaadin.flow.router.BeforeEnterEvent;
 
 @Route("user-details/:userId")
+@PageTitle("Szczegóły użytkownika")
+@CssImport("./styles/styles.css")
 public class UserView extends VerticalLayout implements BeforeEnterObserver {
 
     @Autowired
@@ -27,64 +30,63 @@ public class UserView extends VerticalLayout implements BeforeEnterObserver {
     private String userId;
 
     private final FormLayout userForm = new FormLayout();
-    private final TextField username = new TextField("Username");
+    private final TextField username = new TextField("Nazwa użytkownika");
     private final EmailField email = new EmailField("Email");
-    private final TextField dailyCalorieIntake = new TextField("Daily Calorie Intake");
-    private final TextField dailyCalorieConsumption = new TextField("Daily Calorie Consumption");
+    private final TextField dailyCalorieIntake = new TextField("Dzienne zapotrzebowanie kaloryczne");
 
     public UserView() {
-        HorizontalLayout buttons = createButtonsLayout();
-        userForm.add(username, email, dailyCalorieIntake, dailyCalorieConsumption);
+        setSizeFull();
+        setAlignItems(Alignment.CENTER);
+        setJustifyContentMode(JustifyContentMode.CENTER);
+
+        Div background = new Div();
+        background.addClassName("background");
+        background.setSizeFull();
+
+        Div formContainer = new Div();
+        formContainer.getStyle().set("background-color", "white");
+        formContainer.getStyle().set("padding", "20px");
+        formContainer.getStyle().set("border-radius", "10px");
+        formContainer.add(userForm);
+
+        H1 title = new H1("Szczegóły użytkownika");
+        title.addClassName("title");
+
+        userForm.add(username, email, dailyCalorieIntake);
         userForm.setSizeFull();
-        add(buttons, userForm);
-    }
 
-    private HorizontalLayout createButtonsLayout() {
-        HorizontalLayout functions = new HorizontalLayout();
+        Button editButton = new Button("Edytuj", event -> getUI()
+                .ifPresent(ui -> ui.navigate(UserEditView.class, new RouteParameters("userId", userId))));
+        editButton.addClassName("black-button");
 
-        Button edit = new Button("Edit");
-        edit.addClickListener(event -> UI.getCurrent().navigate(UserEditView.class, new RouteParameters("userId", userId)));
-
-        Button delete = new Button("Delete");
-        delete.addClickListener(event -> {
-            deleteUserById(Long.valueOf(userId));
-            UI.getCurrent().navigate(UsersView.class);
+        Button deleteButton = new Button("Usuń", event -> {
+            userApiClient.deleteUser(Long.valueOf(userId));
+            getUI().ifPresent(ui -> ui.navigate("users"));
         });
+        deleteButton.addClassName("black-button");
 
-        Button backToMain = new Button("Main menu");
-        backToMain.addClickListener(event -> UI.getCurrent().navigate(MainView.class));
+        Button undoButton = new Button("Cofnij", event -> UI
+                .getCurrent().getPage().executeJs("history.back()"));
+        undoButton.addClassName("black-button");
 
-//        Button addApiRecipe = new Button("Dodaj przepis");
-//        addApiRecipe.addClickListener(event -> {
-//            UI.getCurrent().navigate(RecipeApiView.class, new RouteParameters("userId", userId.toString()));
-//        });
-//
-//        Button addApiActivity = new Button("Dodaj aktywność");
-//        addApiActivity.addClickListener(event -> {
-//            VaadinSession.getCurrent().setAttribute("userId", userId);
-//            UI.getCurrent().navigate(ActivityApiView.class, new RouteParameters("userId", userId));
-//        });
+        Button backButton = new Button("Powrót do głównego menu", event -> getUI()
+                .ifPresent(ui -> ui.navigate("")));
+        backButton.addClassName("black-button");
 
-        functions.add(edit, delete, backToMain);
-        return functions;
-    }
+        HorizontalLayout buttonsLayout = new HorizontalLayout(editButton, deleteButton, undoButton, backButton);
+        buttonsLayout.setSpacing(true);
+        buttonsLayout.setAlignItems(Alignment.CENTER);
 
-    private void deleteUserById(Long id) {
-        userApiClient.deleteUser(id);
-    }
-
-    @Override
-    protected void onAttach(AttachEvent attachEvent) {
-        super.onAttach(attachEvent);
-        UserDTO user = userApiClient.getUserById(Long.parseLong(userId));
-        username.setValue(user.getUsername());
-        email.setValue(user.getEmail());
-        dailyCalorieIntake.setValue(String.valueOf(user.getDailyCalorieIntake()));
-        dailyCalorieConsumption.setValue(String.valueOf(user.getDailyCalorieConsumption()));
+        add(title, formContainer, buttonsLayout);
+        getElement().appendChild(background.getElement());
     }
 
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
         this.userId = event.getRouteParameters().get("userId").orElseThrow();
+        UserDTO user = userApiClient.getUserById(Long.parseLong(userId));
+        username.setValue(user.getUsername());
+        email.setValue(user.getEmail());
+        dailyCalorieIntake.setValue(String.valueOf(user.getDailyCalorieIntake()));
     }
 }

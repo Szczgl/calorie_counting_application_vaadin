@@ -2,6 +2,7 @@ package com.calories.front.api;
 
 import com.calories.front.dto.ActivityDTO;
 import com.calories.front.dto.RecipeDTO;
+import com.calories.front.dto.ReportDTO;
 import com.calories.front.dto.UserDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -80,6 +81,14 @@ public class UserApiClient {
                 .bodyValue(activityDTO)
                 .retrieve()
                 .toBodilessEntity()
+                .block();
+    }
+
+    public ReportDTO generateReport(Long userId) {
+        return this.webClient.get()
+                .uri("/v1/users/{id}/daily-report", userId)
+                .retrieve()
+                .bodyToMono(ReportDTO.class)
                 .block();
     }
 }
