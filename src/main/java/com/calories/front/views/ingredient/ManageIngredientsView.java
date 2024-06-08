@@ -1,18 +1,16 @@
-package com.calories.front.views.activity;
+package com.calories.front.views.ingredient;
 
-import com.calories.front.api.ActivityApiClient;
+import com.calories.front.api.IngredientApiClient;
 import com.calories.front.api.UserApiClient;
-import com.calories.front.dto.ActivityDTO;
+import com.calories.front.dto.IngredientDTO;
 import com.calories.front.dto.UserDTO;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
@@ -27,17 +25,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Route("view-activities/:userId")
-@PageTitle("Wyświetl aktywności")
+@Route("manage-ingredients/:userId")
+@PageTitle("Dodawanie, usuwanie i modyfikowanie składników")
 @CssImport("./styles/styles.css")
-public class ViewActivitiesView extends VerticalLayout implements BeforeEnterObserver {
+public class ManageIngredientsView extends VerticalLayout implements BeforeEnterObserver {
 
-    private final ActivityApiClient activityApiClient;
+    private final IngredientApiClient ingredientApiClient;
     private final UserApiClient userApiClient;
 
-    private final Grid<ActivityDTO> grid = new Grid<>(ActivityDTO.class);
+    private final Grid<IngredientDTO> grid = new Grid<>(IngredientDTO.class);
     private final TextField filter = new TextField();
-    private final Checkbox userOnlyCheckbox = new Checkbox("Wyświetl tylko aktywności wybranego użytkownika", true);
 
     private String userId;
     private UserDTO selectedUser;
@@ -48,8 +45,8 @@ public class ViewActivitiesView extends VerticalLayout implements BeforeEnterObs
     private final TextField dailyCalorieConsumption = new TextField("Dzienne spalanie kalorii");
 
     @Autowired
-    public ViewActivitiesView(ActivityApiClient activityApiClient, UserApiClient userApiClient) {
-        this.activityApiClient = activityApiClient;
+    public ManageIngredientsView(IngredientApiClient ingredientApiClient, UserApiClient userApiClient) {
+        this.ingredientApiClient = ingredientApiClient;
         this.userApiClient = userApiClient;
 
         setSizeFull();
@@ -77,7 +74,11 @@ public class ViewActivitiesView extends VerticalLayout implements BeforeEnterObs
         userDetailContainer.add(userInfoLayout);
 
         add(userDetailContainer);
-        add(createActivitiesView());
+        add(createIngredientsView());
+
+        Button addIngredientButton = new Button("Dodaj nowy składnik", event -> getUI().ifPresent(ui -> ui.navigate("add-ingredient")));
+        addIngredientButton.addClassName("large-button");
+        add(addIngredientButton);
 
         HorizontalLayout footerButtons = createFooterButtons();
         footerButtons.getStyle().set("position", "absolute");
@@ -90,41 +91,50 @@ public class ViewActivitiesView extends VerticalLayout implements BeforeEnterObs
         getElement().appendChild(background.getElement());
     }
 
-    private VerticalLayout createActivitiesView() {
-        VerticalLayout activitiesLayout = new VerticalLayout();
+    private VerticalLayout createIngredientsView() {
+        VerticalLayout ingredientsLayout = new VerticalLayout();
 
-        H1 title = new H1("Lista aktywności");
+        H1 title = new H1("Lista składników");
         title.addClassName("title");
 
-        filter.setPlaceholder("Szukaj po nazwie aktywności...");
+        filter.setPlaceholder("Szukaj po nazwie składnika...");
         filter.setValueChangeMode(ValueChangeMode.EAGER);
         filter.addValueChangeListener(e -> updateList());
         filter.addClassName("custom-search-field");
 
-        userOnlyCheckbox.addValueChangeListener(e -> updateList());
-        userOnlyCheckbox.getStyle().set("background-color", "white");
-        userOnlyCheckbox.getStyle().set("padding", "5px");
-        userOnlyCheckbox.getStyle().set("border-radius", "5px");
+        grid.setColumns("name", "quantity", "calories");
 
-        HorizontalLayout filterLayout = new HorizontalLayout(filter, userOnlyCheckbox);
-        filterLayout.setWidthFull();
-        filterLayout.setJustifyContentMode(JustifyContentMode.BETWEEN);
-        filterLayout.setAlignItems(Alignment.CENTER);
+        grid.addComponentColumn(this::createEditButton).setHeader("Edytuj");
+        grid.addComponentColumn(this::createDeleteButton).setHeader("Usuń");
 
-        grid.removeAllColumns();
-        grid.addColumn(ActivityDTO::getName).setHeader("Nazwa");
-        grid.addComponentColumn(activity -> {
-            Span description = new Span(activity.getDescription());
-            description.getElement().setProperty("title", activity.getDescription());
-            return description;
-        }).setHeader("Opis");
-        grid.addColumn(ActivityDTO::getConsumedCalories).setHeader("Kalorie");
-        grid.addThemeVariants(GridVariant.LUMO_ROW_STRIPES);
-
-        activitiesLayout.add(title, filterLayout, grid);
+        ingredientsLayout.add(title, filter, grid);
         refreshGrid();
 
-        return activitiesLayout;
+        return ingredientsLayout;
+    }
+
+    private Button createEditButton(IngredientDTO ingredient) {
+        return new Button("Zmień", event -> {
+            if (canEditOrDelete(ingredient)) {
+            } else {
+                Notification.show("Nie można zmienić składnika, ponieważ jest używany w przepisie", 3000, Notification.Position.MIDDLE);
+            }
+        });
+    }
+
+    private Button createDeleteButton(IngredientDTO ingredient) {
+        return new Button("Usuń", event -> {
+            if (canEditOrDelete(ingredient)) {
+                ingredientApiClient.deleteIngredient(ingredient.getId());
+                refreshGrid();
+            } else {
+                Notification.show("Nie można usunąć składnika, ponieważ jest używany w przepisie", 3000, Notification.Position.MIDDLE);
+            }
+        });
+    }
+
+    private boolean canEditOrDelete(IngredientDTO ingredient) {
+        return true;
     }
 
     @Override
@@ -132,7 +142,7 @@ public class ViewActivitiesView extends VerticalLayout implements BeforeEnterObs
         this.userId = event.getRouteParameters().get("userId").orElseThrow();
         this.selectedUser = userApiClient.getUserById(Long.parseLong(userId));
         updateUserDetails();
-        updateList();
+        refreshGrid();
     }
 
     private void updateUserDetails() {
@@ -143,19 +153,14 @@ public class ViewActivitiesView extends VerticalLayout implements BeforeEnterObs
     }
 
     private void refreshGrid() {
-        List<ActivityDTO> activities = activityApiClient.getAllActivities();
-        grid.setItems(activities);
+        List<IngredientDTO> ingredients = ingredientApiClient.getAllIngredients();
+        grid.setItems(ingredients);
     }
 
     private void updateList() {
-        List<ActivityDTO> activities = activityApiClient.getAllActivities();
-        if (userOnlyCheckbox.getValue()) {
-            activities = activities.stream()
-                    .filter(activity -> activity.getUserId().equals(Long.parseLong(userId)))
-                    .collect(Collectors.toList());
-        }
-        grid.setItems(activities.stream()
-                .filter(activity -> activity.getName().toLowerCase().contains(filter.getValue().toLowerCase()))
+        List<IngredientDTO> ingredients = ingredientApiClient.getAllIngredients();
+        grid.setItems(ingredients.stream()
+                .filter(ingredient -> ingredient.getName().toLowerCase().contains(filter.getValue().toLowerCase()))
                 .collect(Collectors.toList()));
     }
 
@@ -166,7 +171,10 @@ public class ViewActivitiesView extends VerticalLayout implements BeforeEnterObs
         Button undoButton = new Button("Cofnij", event -> UI.getCurrent().getPage().executeJs("history.back()"));
         undoButton.addClassName("black-button");
 
-        HorizontalLayout footerButtons = new HorizontalLayout(undoButton, backButton);
+        Button ingredientsListButton = new Button("Przejdź do listy składników", event -> getUI().ifPresent(ui -> ui.navigate("view-ingredients/" + userId)));
+        ingredientsListButton.addClassName("black-button");
+
+        HorizontalLayout footerButtons = new HorizontalLayout(undoButton, backButton, ingredientsListButton);
         footerButtons.setSpacing(true);
         return footerButtons;
     }

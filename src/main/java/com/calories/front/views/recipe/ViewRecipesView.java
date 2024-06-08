@@ -39,7 +39,7 @@ public class ViewRecipesView extends VerticalLayout implements BeforeEnterObserv
 
     private final Grid<RecipeDTO> grid = new Grid<>(RecipeDTO.class);
     private final TextField filter = new TextField();
-    private final Checkbox userOnlyCheckbox = new Checkbox("Wyświetl tylko przepisy wybranego użytkownika");
+    private final Checkbox userOnlyCheckbox = new Checkbox("Wyświetl tylko przepisy wybranego użytkownika", true);
 
     private String userId;
     private UserDTO selectedUser;
@@ -135,7 +135,7 @@ public class ViewRecipesView extends VerticalLayout implements BeforeEnterObserv
         this.userId = event.getRouteParameters().get("userId").orElseThrow();
         this.selectedUser = userApiClient.getUserById(Long.parseLong(userId));
         updateUserDetails();
-        refreshGrid();
+        updateList();
     }
 
     private void updateUserDetails() {

@@ -6,13 +6,11 @@ import com.calories.front.dto.ActivityDTO;
 import com.calories.front.dto.UserDTO;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
@@ -27,17 +25,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Route("view-activities/:userId")
-@PageTitle("Wyświetl aktywności")
+@Route("manage-activities/:userId")
+@PageTitle("Dodawanie, usuwanie i modyfikowanie aktywności")
 @CssImport("./styles/styles.css")
-public class ViewActivitiesView extends VerticalLayout implements BeforeEnterObserver {
+public class ManageActivitiesView extends VerticalLayout implements BeforeEnterObserver {
 
     private final ActivityApiClient activityApiClient;
     private final UserApiClient userApiClient;
 
     private final Grid<ActivityDTO> grid = new Grid<>(ActivityDTO.class);
     private final TextField filter = new TextField();
-    private final Checkbox userOnlyCheckbox = new Checkbox("Wyświetl tylko aktywności wybranego użytkownika", true);
 
     private String userId;
     private UserDTO selectedUser;
@@ -48,7 +45,7 @@ public class ViewActivitiesView extends VerticalLayout implements BeforeEnterObs
     private final TextField dailyCalorieConsumption = new TextField("Dzienne spalanie kalorii");
 
     @Autowired
-    public ViewActivitiesView(ActivityApiClient activityApiClient, UserApiClient userApiClient) {
+    public ManageActivitiesView(ActivityApiClient activityApiClient, UserApiClient userApiClient) {
         this.activityApiClient = activityApiClient;
         this.userApiClient = userApiClient;
 
@@ -79,6 +76,10 @@ public class ViewActivitiesView extends VerticalLayout implements BeforeEnterObs
         add(userDetailContainer);
         add(createActivitiesView());
 
+        Button addActivityButton = new Button("Dodaj nową aktywność fizyczną", event -> getUI().ifPresent(ui -> ui.navigate("add-activity")));
+        addActivityButton.addClassName("large-button");
+        add(addActivityButton);
+
         HorizontalLayout footerButtons = createFooterButtons();
         footerButtons.getStyle().set("position", "absolute");
         footerButtons.getStyle().set("bottom", "50px");
@@ -101,30 +102,39 @@ public class ViewActivitiesView extends VerticalLayout implements BeforeEnterObs
         filter.addValueChangeListener(e -> updateList());
         filter.addClassName("custom-search-field");
 
-        userOnlyCheckbox.addValueChangeListener(e -> updateList());
-        userOnlyCheckbox.getStyle().set("background-color", "white");
-        userOnlyCheckbox.getStyle().set("padding", "5px");
-        userOnlyCheckbox.getStyle().set("border-radius", "5px");
+        grid.setColumns("name", "description", "consumedCalories");
 
-        HorizontalLayout filterLayout = new HorizontalLayout(filter, userOnlyCheckbox);
-        filterLayout.setWidthFull();
-        filterLayout.setJustifyContentMode(JustifyContentMode.BETWEEN);
-        filterLayout.setAlignItems(Alignment.CENTER);
+        grid.addComponentColumn(this::createEditButton).setHeader("Edytuj");
+        grid.addComponentColumn(this::createDeleteButton).setHeader("Usuń");
 
-        grid.removeAllColumns();
-        grid.addColumn(ActivityDTO::getName).setHeader("Nazwa");
-        grid.addComponentColumn(activity -> {
-            Span description = new Span(activity.getDescription());
-            description.getElement().setProperty("title", activity.getDescription());
-            return description;
-        }).setHeader("Opis");
-        grid.addColumn(ActivityDTO::getConsumedCalories).setHeader("Kalorie");
-        grid.addThemeVariants(GridVariant.LUMO_ROW_STRIPES);
-
-        activitiesLayout.add(title, filterLayout, grid);
+        activitiesLayout.add(title, filter, grid);
         refreshGrid();
 
         return activitiesLayout;
+    }
+
+    private Button createEditButton(ActivityDTO activity) {
+        return new Button("Zmień", event -> {
+            if (canEditOrDelete(activity)) {
+            } else {
+                Notification.show("Nie można zmienić aktywności, ponieważ jest używana", 3000, Notification.Position.MIDDLE);
+            }
+        });
+    }
+
+    private Button createDeleteButton(ActivityDTO activity) {
+        return new Button("Usuń", event -> {
+            if (canEditOrDelete(activity)) {
+                activityApiClient.deleteActivity(activity.getId());
+                refreshGrid();
+            } else {
+                Notification.show("Nie można usunąć aktywności, ponieważ jest używana", 3000, Notification.Position.MIDDLE);
+            }
+        });
+    }
+
+    private boolean canEditOrDelete(ActivityDTO activity) {
+        return true;
     }
 
     @Override
@@ -132,7 +142,7 @@ public class ViewActivitiesView extends VerticalLayout implements BeforeEnterObs
         this.userId = event.getRouteParameters().get("userId").orElseThrow();
         this.selectedUser = userApiClient.getUserById(Long.parseLong(userId));
         updateUserDetails();
-        updateList();
+        refreshGrid();
     }
 
     private void updateUserDetails() {
@@ -149,11 +159,6 @@ public class ViewActivitiesView extends VerticalLayout implements BeforeEnterObs
 
     private void updateList() {
         List<ActivityDTO> activities = activityApiClient.getAllActivities();
-        if (userOnlyCheckbox.getValue()) {
-            activities = activities.stream()
-                    .filter(activity -> activity.getUserId().equals(Long.parseLong(userId)))
-                    .collect(Collectors.toList());
-        }
         grid.setItems(activities.stream()
                 .filter(activity -> activity.getName().toLowerCase().contains(filter.getValue().toLowerCase()))
                 .collect(Collectors.toList()));
@@ -166,7 +171,10 @@ public class ViewActivitiesView extends VerticalLayout implements BeforeEnterObs
         Button undoButton = new Button("Cofnij", event -> UI.getCurrent().getPage().executeJs("history.back()"));
         undoButton.addClassName("black-button");
 
-        HorizontalLayout footerButtons = new HorizontalLayout(undoButton, backButton);
+        Button activitiesListButton = new Button("Przejdź do listy aktywności", event -> getUI().ifPresent(ui -> ui.navigate("view-activities/" + userId)));
+        activitiesListButton.addClassName("black-button");
+
+        HorizontalLayout footerButtons = new HorizontalLayout(undoButton, backButton, activitiesListButton);
         footerButtons.setSpacing(true);
         return footerButtons;
     }
