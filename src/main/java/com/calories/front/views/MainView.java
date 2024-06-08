@@ -30,12 +30,12 @@ public class MainView extends VerticalLayout {
         Button selectUserButton = new Button("Wybierz użytkownika");
         selectUserButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         selectUserButton.addClickListener(e -> getUI().ifPresent(ui -> ui.navigate("users")));
-        selectUserButton.addClassName("black-button");
+        selectUserButton.addClassName("large-button");
 
         Button addUserButton = new Button("Dodaj użytkownika");
         addUserButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         addUserButton.addClickListener(e -> getUI().ifPresent(ui -> ui.navigate("create-user")));
-        addUserButton.addClassName("black-button");
+        addUserButton.addClassName("large-button");
 
         HorizontalLayout buttonLayout = new HorizontalLayout(selectUserButton, addUserButton);
         buttonLayout.setSpacing(true);

@@ -18,7 +18,7 @@ body, html {
 }
 
 .title {
-    font-size: 4em;
+    font-size: 5em;
     color: black;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
@@ -51,4 +51,21 @@ body, html {
     border: 1px solid #ccc;
     padding: 10px;
     border-radius: 5px;
+}
+
+.large-button {
+    font-size: 2.5em;
+    padding: 30px 50px;
+    background-color: #000000;
+    color: white;
+    border: 2px solid #000000;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    margin: 25px 0;
+}
+
+.large-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
 }

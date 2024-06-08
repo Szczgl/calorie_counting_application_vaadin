@@ -97,40 +97,16 @@ public class UserDetailsView extends VerticalLayout implements BeforeEnterObserv
     private VerticalLayout createButtonsLayout() {
         VerticalLayout buttonsLayout = new VerticalLayout();
 
-        Button addIngredientButton = new Button("Dodaj składnik", event -> getUI().ifPresent(ui -> ui.navigate("add-ingredient")));
-        addIngredientButton.addClassName("black-button");
-
         Button viewIngredientsButton = new Button("Wyświetl składniki", event -> getUI().ifPresent(ui -> ui.navigate("view-ingredients/" + userId)));
-        viewIngredientsButton.addClassName("black-button");
-
-        Button addRecipeButton = new Button("Dodaj przepis", event -> {
-            getUI().ifPresent(ui -> ui.navigate("add-activity"));
-            refreshUserDetails();
-        });
-        addRecipeButton.addClassName("black-button");
+        viewIngredientsButton.addClassName("large-button");
 
         Button viewRecipesButton = new Button("Wyświetl listę przepisów", event -> getUI().ifPresent(ui -> ui.navigate("view-recipes/" + userId)));
-        viewRecipesButton.addClassName("black-button");
-
-        Button addActivityButton = new Button("Dodaj aktywność fizyczną", event -> {
-            getUI().ifPresent(ui -> ui.navigate("add-recipe"));
-            refreshUserDetails();
-        });
-        addActivityButton.addClassName("black-button");
+        viewRecipesButton.addClassName("large-button");
 
         Button viewActivitiesButton = new Button("Wyświetl listę aktywności", event -> getUI().ifPresent(ui -> ui.navigate("view-activities/" + userId)));
-        viewActivitiesButton.addClassName("black-button");
+        viewActivitiesButton.addClassName("large-button");
 
-        HorizontalLayout ingredientButtons = new HorizontalLayout(addIngredientButton, viewIngredientsButton);
-        ingredientButtons.setSpacing(true);
-
-        HorizontalLayout recipeButtons = new HorizontalLayout(addRecipeButton, viewRecipesButton);
-        recipeButtons.setSpacing(true);
-
-        HorizontalLayout activityButtons = new HorizontalLayout(addActivityButton, viewActivitiesButton);
-        activityButtons.setSpacing(true);
-
-        buttonsLayout.add(ingredientButtons, recipeButtons, activityButtons);
+        buttonsLayout.add(viewIngredientsButton, viewRecipesButton, viewActivitiesButton);
         buttonsLayout.setAlignItems(Alignment.CENTER);
         buttonsLayout.setSpacing(true);
 
