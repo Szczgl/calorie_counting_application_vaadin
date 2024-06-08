@@ -21,15 +21,12 @@ public class MainView extends VerticalLayout {
         setAlignItems(Alignment.CENTER);
         setJustifyContentMode(JustifyContentMode.CENTER);
 
-        // Tło
         Div background = new Div();
         background.addClassName("background");
 
-        // Nagłówek
         H1 title = new H1("KALKULATOR KALORII");
         title.addClassName("title");
 
-        // Przyciski
         Button selectUserButton = new Button("Wybierz użytkownika");
         selectUserButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         selectUserButton.addClickListener(e -> getUI().ifPresent(ui -> ui.navigate("users")));
@@ -40,12 +37,10 @@ public class MainView extends VerticalLayout {
         addUserButton.addClickListener(e -> getUI().ifPresent(ui -> ui.navigate("create-user")));
         addUserButton.addClassName("black-button");
 
-        // Kontener na przyciski
         HorizontalLayout buttonLayout = new HorizontalLayout(selectUserButton, addUserButton);
         buttonLayout.setSpacing(true);
         buttonLayout.setAlignItems(Alignment.CENTER);
 
-        // Napis w prawym dolnym rogu
         Div footer = new Div();
         footer.setText("Created by Tomasz Sz.");
         footer.addClassName("footer");

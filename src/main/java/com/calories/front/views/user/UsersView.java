@@ -62,7 +62,7 @@ public class UsersView extends VerticalLayout {
             HorizontalLayout actions = new HorizontalLayout();
 
             Button selectButton = new Button("Wybierz", clickEvent -> {
-                getUI().ifPresent(ui -> ui.navigate(UserView.class, new RouteParameters("userId", user.getId().toString())));
+                getUI().ifPresent(ui -> ui.navigate(UserDetailsView.class, new RouteParameters("userId", user.getId().toString())));
             });
             selectButton.addClassName("black-button");
 
