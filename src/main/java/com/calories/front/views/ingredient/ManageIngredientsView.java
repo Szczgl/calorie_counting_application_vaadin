@@ -1,9 +1,7 @@
 package com.calories.front.views.ingredient;
 
 import com.calories.front.api.IngredientApiClient;
-import com.calories.front.api.UserApiClient;
 import com.calories.front.dto.IngredientDTO;
-import com.calories.front.dto.UserDTO;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.CssImport;
@@ -13,7 +11,6 @@ import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.BeforeEnterEvent;
@@ -25,29 +22,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Route("manage-ingredients/:userId")
+@Route("manage-ingredients")
 @PageTitle("Dodawanie, usuwanie i modyfikowanie składników")
 @CssImport("./styles/styles.css")
 public class ManageIngredientsView extends VerticalLayout implements BeforeEnterObserver {
 
     private final IngredientApiClient ingredientApiClient;
-    private final UserApiClient userApiClient;
 
     private final Grid<IngredientDTO> grid = new Grid<>(IngredientDTO.class);
     private final TextField filter = new TextField();
 
-    private String userId;
-    private UserDTO selectedUser;
-
-    private final TextField username = new TextField("Nazwa użytkownika");
-    private final EmailField email = new EmailField("Email");
-    private final TextField dailyCalorieIntake = new TextField("Dzienne zapotrzebowanie kaloryczne");
-    private final TextField dailyCalorieConsumption = new TextField("Dzienne spalanie kalorii");
-
     @Autowired
-    public ManageIngredientsView(IngredientApiClient ingredientApiClient, UserApiClient userApiClient) {
+    public ManageIngredientsView(IngredientApiClient ingredientApiClient) {
         this.ingredientApiClient = ingredientApiClient;
-        this.userApiClient = userApiClient;
 
         setSizeFull();
         setAlignItems(Alignment.CENTER);
@@ -57,23 +44,6 @@ public class ManageIngredientsView extends VerticalLayout implements BeforeEnter
         background.addClassName("background");
         background.setSizeFull();
 
-        Div userDetailContainer = new Div();
-        userDetailContainer.getStyle().set("background-color", "white");
-        userDetailContainer.getStyle().set("padding", "20px");
-        userDetailContainer.getStyle().set("border-radius", "10px");
-        userDetailContainer.getStyle().set("margin", "50px auto 0 auto");
-
-        HorizontalLayout userDetailLayout = new HorizontalLayout(username, email, dailyCalorieIntake, dailyCalorieConsumption);
-        userDetailLayout.setSpacing(true);
-
-        Button changeUserButton = new Button("Zmień", event -> getUI().ifPresent(ui -> ui.navigate("users")));
-        changeUserButton.addClassName("black-button");
-
-        VerticalLayout userInfoLayout = new VerticalLayout(userDetailLayout, changeUserButton);
-        userInfoLayout.setSpacing(true);
-        userDetailContainer.add(userInfoLayout);
-
-        add(userDetailContainer);
         add(createIngredientsView());
 
         Button addIngredientButton = new Button("Dodaj nowy składnik", event -> getUI().ifPresent(ui -> ui.navigate("add-ingredient")));
@@ -103,6 +73,8 @@ public class ManageIngredientsView extends VerticalLayout implements BeforeEnter
         filter.addClassName("custom-search-field");
 
         grid.setColumns("name", "quantity", "calories");
+        grid.getColumnByKey("quantity").setHeader("Ilość");
+        grid.getColumnByKey("calories").setHeader("Kalorie");
 
         grid.addComponentColumn(this::createEditButton).setHeader("Edytuj");
         grid.addComponentColumn(this::createDeleteButton).setHeader("Usuń");
@@ -114,16 +86,19 @@ public class ManageIngredientsView extends VerticalLayout implements BeforeEnter
     }
 
     private Button createEditButton(IngredientDTO ingredient) {
-        return new Button("Zmień", event -> {
+        Button editButton = new Button("Zmień", event -> {
             if (canEditOrDelete(ingredient)) {
+                getUI().ifPresent(ui -> ui.navigate("edit-ingredient/" + ingredient.getId()));
             } else {
                 Notification.show("Nie można zmienić składnika, ponieważ jest używany w przepisie", 3000, Notification.Position.MIDDLE);
             }
         });
+        editButton.addClassName("black-button");
+        return editButton;
     }
 
     private Button createDeleteButton(IngredientDTO ingredient) {
-        return new Button("Usuń", event -> {
+        Button deleteButton = new Button("Usuń", event -> {
             if (canEditOrDelete(ingredient)) {
                 ingredientApiClient.deleteIngredient(ingredient.getId());
                 refreshGrid();
@@ -131,25 +106,17 @@ public class ManageIngredientsView extends VerticalLayout implements BeforeEnter
                 Notification.show("Nie można usunąć składnika, ponieważ jest używany w przepisie", 3000, Notification.Position.MIDDLE);
             }
         });
+        deleteButton.addClassName("black-button");
+        return deleteButton;
     }
 
     private boolean canEditOrDelete(IngredientDTO ingredient) {
-        return true;
+        return !ingredientApiClient.isIngredientInAnyRecipe(ingredient.getId());
     }
 
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
-        this.userId = event.getRouteParameters().get("userId").orElseThrow();
-        this.selectedUser = userApiClient.getUserById(Long.parseLong(userId));
-        updateUserDetails();
         refreshGrid();
-    }
-
-    private void updateUserDetails() {
-        username.setValue(selectedUser.getUsername());
-        email.setValue(selectedUser.getEmail());
-        dailyCalorieIntake.setValue(String.valueOf(selectedUser.getDailyCalorieIntake()));
-        dailyCalorieConsumption.setValue(String.valueOf(selectedUser.getDailyCalorieConsumption()));
     }
 
     private void refreshGrid() {
@@ -171,10 +138,7 @@ public class ManageIngredientsView extends VerticalLayout implements BeforeEnter
         Button undoButton = new Button("Cofnij", event -> UI.getCurrent().getPage().executeJs("history.back()"));
         undoButton.addClassName("black-button");
 
-        Button ingredientsListButton = new Button("Przejdź do listy składników", event -> getUI().ifPresent(ui -> ui.navigate("view-ingredients/" + userId)));
-        ingredientsListButton.addClassName("black-button");
-
-        HorizontalLayout footerButtons = new HorizontalLayout(undoButton, backButton, ingredientsListButton);
+        HorizontalLayout footerButtons = new HorizontalLayout(undoButton, backButton);
         footerButtons.setSpacing(true);
         return footerButtons;
     }

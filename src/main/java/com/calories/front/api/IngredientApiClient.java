@@ -60,4 +60,23 @@ public class IngredientApiClient {
                 .toBodilessEntity()
                 .block();
     }
+
+    public boolean isIngredientInAnyRecipe(Long id) {
+        return webClient.get()
+                .uri("/v1/ingredients/{id}/is-in-recipe", id)
+                .retrieve()
+                .bodyToMono(Boolean.class)
+                .block();
+    }
+
+    public boolean existsByName(String name) {
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/v1/ingredients/existsByName")
+                        .queryParam("name", name)
+                        .build())
+                .retrieve()
+                .bodyToMono(Boolean.class)
+                .block();
+    }
 }
