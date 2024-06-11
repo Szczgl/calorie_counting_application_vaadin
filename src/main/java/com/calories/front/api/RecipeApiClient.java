@@ -60,12 +60,4 @@ public class RecipeApiClient {
                 .toBodilessEntity()
                 .block();
     }
-
-    public boolean existsByIngredients_Id(Long ingredientId) {
-        return webClient.get()
-                .uri("/v1/recipes/existsByIngredients_Id/{ingredientId}", ingredientId)
-                .retrieve()
-                .bodyToMono(Boolean.class)
-                .block();
-    }
 }

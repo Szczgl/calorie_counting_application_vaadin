@@ -22,6 +22,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.text.DecimalFormat;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,6 +44,8 @@ public class ManageRecipesView extends VerticalLayout implements BeforeEnterObse
     private final EmailField email = new EmailField("Email");
     private final TextField dailyCalorieIntake = new TextField("Dzienne zapotrzebowanie kaloryczne");
     private final TextField dailyCalorieConsumption = new TextField("Dzienne spalanie kalorii");
+
+    private final DecimalFormat decimalFormat = new DecimalFormat("#.0");
 
     @Autowired
     public ManageRecipesView(RecipeApiClient recipeApiClient, UserApiClient userApiClient) {
@@ -76,7 +79,7 @@ public class ManageRecipesView extends VerticalLayout implements BeforeEnterObse
         add(userDetailContainer);
         add(createRecipesView());
 
-        Button addRecipeButton = new Button("Dodaj nowy przepis", event -> getUI().ifPresent(ui -> ui.navigate("add-recipe")));
+        Button addRecipeButton = new Button("Dodaj nowy przepis", event -> getUI().ifPresent(ui -> ui.navigate("add-recipe/" + userId)));
         addRecipeButton.addClassName("large-button");
         add(addRecipeButton);
 
@@ -114,27 +117,19 @@ public class ManageRecipesView extends VerticalLayout implements BeforeEnterObse
     }
 
     private Button createEditButton(RecipeDTO recipe) {
-        return new Button("Zmień", event -> {
-            if (canEditOrDelete(recipe)) {
-            } else {
-                Notification.show("Nie można zmienić przepisu, ponieważ jest używany", 3000, Notification.Position.MIDDLE);
-            }
-        });
+        Button editButton = new Button("Zmień", event -> UI.getCurrent().navigate("edit-recipe/" + recipe.getId()));
+        editButton.addClassName("black-button");
+        return editButton;
     }
 
     private Button createDeleteButton(RecipeDTO recipe) {
-        return new Button("Usuń", event -> {
-            if (canEditOrDelete(recipe)) {
-                recipeApiClient.deleteRecipe(recipe.getId());
-                refreshGrid();
-            } else {
-                Notification.show("Nie można usunąć przepisu, ponieważ jest używany", 3000, Notification.Position.MIDDLE);
-            }
+        Button deleteButton = new Button("Usuń", event -> {
+            recipeApiClient.deleteRecipe(recipe.getId());
+            refreshGrid();
+            Notification.show("Przepis usunięty", 3000, Notification.Position.MIDDLE);
         });
-    }
-
-    private boolean canEditOrDelete(RecipeDTO recipe) {
-        return true;
+        deleteButton.addClassName("black-button");
+        return deleteButton;
     }
 
     @Override
@@ -148,8 +143,17 @@ public class ManageRecipesView extends VerticalLayout implements BeforeEnterObse
     private void updateUserDetails() {
         username.setValue(selectedUser.getUsername());
         email.setValue(selectedUser.getEmail());
-        dailyCalorieIntake.setValue(String.valueOf(selectedUser.getDailyCalorieIntake()));
-        dailyCalorieConsumption.setValue(String.valueOf(selectedUser.getDailyCalorieConsumption()));
+        dailyCalorieIntake.setValue(decimalFormat.format(selectedUser.getDailyCalorieIntake()));
+        updateUserCalorieConsumption();
+    }
+
+    private void updateUserCalorieConsumption() {
+        List<RecipeDTO> recipes = recipeApiClient.getAllRecipes();
+        double totalCalories = recipes.stream()
+                .filter(recipe -> recipe.getUserId().equals(Long.parseLong(userId)))
+                .mapToDouble(RecipeDTO::getTotalCalories)
+                .sum();
+        dailyCalorieConsumption.setValue(decimalFormat.format(totalCalories));
     }
 
     private void refreshGrid() {
