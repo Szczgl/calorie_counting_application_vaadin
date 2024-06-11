@@ -22,6 +22,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.text.DecimalFormat;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,6 +44,8 @@ public class ManageActivitiesView extends VerticalLayout implements BeforeEnterO
     private final EmailField email = new EmailField("Email");
     private final TextField dailyCalorieIntake = new TextField("Dzienne zapotrzebowanie kaloryczne");
     private final TextField dailyCalorieConsumption = new TextField("Dzienne spalanie kalorii");
+
+    private final DecimalFormat decimalFormat = new DecimalFormat("#.0");
 
     @Autowired
     public ManageActivitiesView(ActivityApiClient activityApiClient, UserApiClient userApiClient) {
@@ -76,7 +79,7 @@ public class ManageActivitiesView extends VerticalLayout implements BeforeEnterO
         add(userDetailContainer);
         add(createActivitiesView());
 
-        Button addActivityButton = new Button("Dodaj nową aktywność fizyczną", event -> getUI().ifPresent(ui -> ui.navigate("add-activity")));
+        Button addActivityButton = new Button("Dodaj nową aktywność fizyczną", event -> getUI().ifPresent(ui -> ui.navigate("add-activity/" + userId)));
         addActivityButton.addClassName("large-button");
         add(addActivityButton);
 
@@ -114,27 +117,28 @@ public class ManageActivitiesView extends VerticalLayout implements BeforeEnterO
     }
 
     private Button createEditButton(ActivityDTO activity) {
-        return new Button("Zmień", event -> {
-            if (canEditOrDelete(activity)) {
-            } else {
-                Notification.show("Nie można zmienić aktywności, ponieważ jest używana", 3000, Notification.Position.MIDDLE);
-            }
-        });
+        Button editButton = new Button("Zmień", event -> UI.getCurrent().navigate("edit-activity/" + activity.getId()));
+        editButton.addClassName("black-button");
+        return editButton;
     }
 
     private Button createDeleteButton(ActivityDTO activity) {
-        return new Button("Usuń", event -> {
-            if (canEditOrDelete(activity)) {
-                activityApiClient.deleteActivity(activity.getId());
-                refreshGrid();
-            } else {
-                Notification.show("Nie można usunąć aktywności, ponieważ jest używana", 3000, Notification.Position.MIDDLE);
-            }
+        Button deleteButton = new Button("Usuń", event -> {
+            activityApiClient.deleteActivity(activity.getId());
+            updateUserCalorieConsumption();
+            Notification.show("Aktywność usunięta", 3000, Notification.Position.MIDDLE);
         });
+        deleteButton.addClassName("black-button");
+        return deleteButton;
     }
 
-    private boolean canEditOrDelete(ActivityDTO activity) {
-        return true;
+    private void updateUserCalorieConsumption() {
+        List<ActivityDTO> activities = activityApiClient.getAllActivities();
+        double totalCalories = activities.stream()
+                .filter(activity -> activity.getUserId().equals(Long.parseLong(userId)))
+                .mapToDouble(ActivityDTO::getConsumedCalories)
+                .sum();
+        dailyCalorieConsumption.setValue(decimalFormat.format(totalCalories));
     }
 
     @Override
@@ -148,8 +152,8 @@ public class ManageActivitiesView extends VerticalLayout implements BeforeEnterO
     private void updateUserDetails() {
         username.setValue(selectedUser.getUsername());
         email.setValue(selectedUser.getEmail());
-        dailyCalorieIntake.setValue(String.valueOf(selectedUser.getDailyCalorieIntake()));
-        dailyCalorieConsumption.setValue(String.valueOf(selectedUser.getDailyCalorieConsumption()));
+        dailyCalorieIntake.setValue(decimalFormat.format(selectedUser.getDailyCalorieIntake()));
+        updateUserCalorieConsumption();
     }
 
     private void refreshGrid() {
