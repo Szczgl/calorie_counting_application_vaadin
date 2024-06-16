@@ -146,10 +146,7 @@ public class ManageIngredientsView extends VerticalLayout implements BeforeEnter
         Button undoButton = new Button("Cofnij", event -> UI.getCurrent().getPage().executeJs("history.back()"));
         undoButton.addClassName("black-button");
 
-        Button ingredientsListButton = new Button("Przejdź do listy składników", event -> getUI().ifPresent(ui -> ui.navigate("view-ingredients")));
-        ingredientsListButton.addClassName("black-button");
-
-        HorizontalLayout footerButtons = new HorizontalLayout(undoButton, backButton, ingredientsListButton);
+        HorizontalLayout footerButtons = new HorizontalLayout(undoButton, backButton);
         footerButtons.setSpacing(true);
         return footerButtons;
     }
