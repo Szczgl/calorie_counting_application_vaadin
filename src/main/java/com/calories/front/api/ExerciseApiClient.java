@@ -34,7 +34,6 @@ public class ExerciseApiClient {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         return description.toString().trim();
     }
 }

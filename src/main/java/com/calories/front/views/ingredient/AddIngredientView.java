@@ -10,18 +10,21 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.util.List;
 import java.util.Locale;
 
 @Route("add-ingredient")
 @PageTitle("Dodawanie nowego składnika")
 @CssImport("./styles/styles.css")
-public class AddIngredientView extends VerticalLayout {
+public class AddIngredientView extends VerticalLayout implements BeforeEnterObserver {
 
     private final IngredientApiClient ingredientApiClient;
 
@@ -29,6 +32,8 @@ public class AddIngredientView extends VerticalLayout {
     private final TextField quantityField = new TextField("Ilość");
     private final TextField caloriesField = new TextField("Kalorie");
     private final DecimalFormat decimalFormat;
+
+    private String returnUrl;
 
     @Autowired
     public AddIngredientView(IngredientApiClient ingredientApiClient) {
@@ -68,20 +73,45 @@ public class AddIngredientView extends VerticalLayout {
         quantityField.setPlaceholder("Ilość");
         caloriesField.setPlaceholder("Kalorie");
 
+        Button checkButton = new Button("Sprawdź w bazie", event -> checkIngredientInDatabase());
+        checkButton.addClassName("black-button");
+
         Button saveButton = new Button("Zapisz", event -> saveIngredient());
         saveButton.addClassName("black-button");
 
-        Button cancelButton = new Button("Anuluj", event -> UI.getCurrent().navigate("manage-ingredients"));
+        Button cancelButton = new Button("Anuluj", event -> navigateBack());
         cancelButton.addClassName("black-button");
+
+        HorizontalLayout nameLayout = new HorizontalLayout(nameField, checkButton);
+        nameLayout.setSpacing(true);
 
         HorizontalLayout buttonsLayout = new HorizontalLayout(saveButton, cancelButton);
         buttonsLayout.setSpacing(true);
 
-        formLayout.add(nameField, quantityField, caloriesField, buttonsLayout);
+        formLayout.add(nameLayout, quantityField, caloriesField, buttonsLayout);
         formLayout.setAlignItems(Alignment.CENTER);
         formLayout.setSpacing(true);
 
         return formLayout;
+    }
+
+    private void checkIngredientInDatabase() {
+        String name = nameField.getValue().trim();
+        if (name.isEmpty()) {
+            Notification.show("Proszę wpisać nazwę składnika", 3000, Notification.Position.MIDDLE);
+            return;
+        }
+        try {
+            IngredientDTO ingredient = ingredientApiClient.searchIngredientInEdamam(name);
+            if (ingredient != null) {
+                quantityField.setValue(String.valueOf(ingredient.getQuantity()));
+                caloriesField.setValue(String.valueOf(ingredient.getCalories()));
+            } else {
+                Notification.show("Składnik nie znaleziony w bazie. Proszę wpisać wartości ręcznie.", 3000, Notification.Position.MIDDLE);
+            }
+        } catch (Exception e) {
+            Notification.show("Błąd podczas wyszukiwania składnika: " + e.getMessage(), 3000, Notification.Position.MIDDLE);
+        }
     }
 
     private void saveIngredient() {
@@ -100,11 +130,24 @@ public class AddIngredientView extends VerticalLayout {
             ingredientApiClient.createIngredient(newIngredient);
 
             Notification.show("Składnik zapisany", 3000, Notification.Position.MIDDLE);
-            UI.getCurrent().navigate("manage-ingredients");
+            navigateBack();
         } catch (NumberFormatException e) {
             Notification.show("Błąd: Nieprawidłowy format liczby", 3000, Notification.Position.MIDDLE);
         } catch (Exception e) {
             Notification.show("Błąd podczas zapisu składnika", 3000, Notification.Position.MIDDLE);
         }
+    }
+
+    private void navigateBack() {
+        if (returnUrl != null) {
+            UI.getCurrent().navigate(returnUrl);
+        } else {
+            UI.getCurrent().navigate("");
+        }
+    }
+
+    @Override
+    public void beforeEnter(BeforeEnterEvent event) {
+        this.returnUrl = event.getLocation().getQueryParameters().getParameters().getOrDefault("returnUrl", List.of("")).get(0);
     }
 }

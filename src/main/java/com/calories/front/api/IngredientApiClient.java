@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.List;
 
@@ -78,5 +79,20 @@ public class IngredientApiClient {
                 .retrieve()
                 .bodyToMono(Boolean.class)
                 .block();
+    }
+
+    public IngredientDTO searchIngredientInEdamam(String name) {
+        try {
+            return webClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/v1/ingredients/search")
+                            .queryParam("name", name)
+                            .build())
+                    .retrieve()
+                    .bodyToMono(IngredientDTO.class)
+                    .block();
+        } catch (WebClientResponseException.NotFound e) {
+            return null;
+        }
     }
 }

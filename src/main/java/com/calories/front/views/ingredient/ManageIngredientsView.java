@@ -46,7 +46,7 @@ public class ManageIngredientsView extends VerticalLayout implements BeforeEnter
 
         add(createIngredientsView());
 
-        Button addIngredientButton = new Button("Dodaj nowy składnik", event -> getUI().ifPresent(ui -> ui.navigate("add-ingredient")));
+        Button addIngredientButton = new Button("Dodaj nowy składnik", event -> navigateToAddIngredient());
         addIngredientButton.addClassName("large-button");
         add(addIngredientButton);
 
@@ -131,6 +131,14 @@ public class ManageIngredientsView extends VerticalLayout implements BeforeEnter
                 .collect(Collectors.toList()));
     }
 
+    private void navigateToAddIngredient() {
+        UI.getCurrent().navigate("add-ingredient?returnUrl=" + getReturnUrl());
+    }
+
+    private String getReturnUrl() {
+        return "manage-ingredients";
+    }
+
     private HorizontalLayout createFooterButtons() {
         Button backButton = new Button("Powrót do głównego menu", event -> getUI().ifPresent(ui -> ui.navigate("")));
         backButton.addClassName("black-button");
@@ -138,7 +146,10 @@ public class ManageIngredientsView extends VerticalLayout implements BeforeEnter
         Button undoButton = new Button("Cofnij", event -> UI.getCurrent().getPage().executeJs("history.back()"));
         undoButton.addClassName("black-button");
 
-        HorizontalLayout footerButtons = new HorizontalLayout(undoButton, backButton);
+        Button ingredientsListButton = new Button("Przejdź do listy składników", event -> getUI().ifPresent(ui -> ui.navigate("view-ingredients")));
+        ingredientsListButton.addClassName("black-button");
+
+        HorizontalLayout footerButtons = new HorizontalLayout(undoButton, backButton, ingredientsListButton);
         footerButtons.setSpacing(true);
         return footerButtons;
     }

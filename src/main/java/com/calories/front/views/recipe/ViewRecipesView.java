@@ -151,15 +151,16 @@ public class ViewRecipesView extends VerticalLayout implements BeforeEnterObserv
     }
 
     private void updateList() {
-        List<RecipeDTO> recipes = recipeApiClient.getAllRecipes();
-        if (userOnlyCheckbox.getValue()) {
-            recipes = recipes.stream()
-                    .filter(recipe -> recipe.getUserId().equals(Long.parseLong(userId)))
-                    .collect(Collectors.toList());
-        }
+        List<RecipeDTO> recipes = userOnlyCheckbox.getValue() ? getRecipesForSelectedUser() : recipeApiClient.getAllRecipes();
         grid.setItems(recipes.stream()
                 .filter(recipe -> recipe.getName().toLowerCase().contains(filter.getValue().toLowerCase()))
                 .collect(Collectors.toList()));
+    }
+
+    private List<RecipeDTO> getRecipesForSelectedUser() {
+        return recipeApiClient.getAllRecipes().stream()
+                .filter(recipe -> recipe.getUserId() != null && recipe.getUserId().equals(Long.parseLong(userId)))
+                .collect(Collectors.toList());
     }
 
     private void showIngredientsDialog(RecipeDTO recipe) {

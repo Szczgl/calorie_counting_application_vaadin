@@ -1,7 +1,5 @@
 package com.calories.front.api;
 
-import com.calories.front.dto.ActivityDTO;
-import com.calories.front.dto.RecipeDTO;
 import com.calories.front.dto.ReportDTO;
 import com.calories.front.dto.UserDTO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,26 +57,6 @@ public class UserApiClient {
     public void deleteUser(Long id) {
         webClient.delete()
                 .uri("/v1/users/{id}", id)
-                .retrieve()
-                .toBodilessEntity()
-                .block();
-    }
-
-    public void addRecipeToUser(Long userId, RecipeDTO recipeDTO) {
-        webClient.post()
-                .uri("/v1/users/{userId}/recipes", userId)
-                .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(recipeDTO)
-                .retrieve()
-                .toBodilessEntity()
-                .block();
-    }
-
-    public void addActivityToUser(Long userId, ActivityDTO activityDTO) {
-        webClient.post()
-                .uri("/v1/users/{userId}/activities", userId)
-                .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(activityDTO)
                 .retrieve()
                 .toBodilessEntity()
                 .block();

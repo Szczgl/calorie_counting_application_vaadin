@@ -103,13 +103,13 @@ public class UserDetailsView extends VerticalLayout implements BeforeEnterObserv
         Button viewIngredientsButton = new Button("Wyświetl składniki", event -> getUI().ifPresent(ui -> ui.navigate("view-ingredients/" + userId)));
         viewIngredientsButton.addClassName("large-button");
 
-        Button addRecipeButton = new Button("Dodaj nowy przepis", event -> getUI().ifPresent(ui -> ui.navigate("manage-recipes/" + userId)));
+        Button addRecipeButton = new Button("Dodaj nowy, usuń, zmodyfikuj przepis", event -> getUI().ifPresent(ui -> ui.navigate("manage-recipes/" + userId)));
         addRecipeButton.addClassName("large-button");
 
         Button viewRecipesButton = new Button("Wyświetl listę przepisów", event -> getUI().ifPresent(ui -> ui.navigate("view-recipes/" + userId)));
         viewRecipesButton.addClassName("large-button");
 
-        Button addActivityButton = new Button("Dodaj nową aktywność fizyczną", event -> getUI().ifPresent(ui -> ui.navigate("manage-activities/" + userId)));
+        Button addActivityButton = new Button("Dodaj nową, usuń, zmodyfikuj aktywność", event -> getUI().ifPresent(ui -> ui.navigate("manage-activities/" + userId)));
         addActivityButton.addClassName("large-button");
 
         Button viewActivitiesButton = new Button("Wyświetl listę aktywności", event -> getUI().ifPresent(ui -> ui.navigate("view-activities/" + userId)));
