@@ -173,7 +173,12 @@ public class ViewRecipesView extends VerticalLayout implements BeforeEnterObserv
 
         List<IngredientDTO> ingredients = recipe.getIngredients();
         if (ingredients != null && !ingredients.isEmpty()) {
-            ingredients.forEach(ingredient -> dialogLayout.add(new Div(new Span(ingredient.getName() + ": " + ingredient.getQuantity()))));
+            ingredients.forEach(ingredient -> {
+                double quantity = ingredient.getQuantity();  // Ilość składnika użyta w przepisie
+                double calories = ingredient.getCalories();
+                String ingredientInfo = String.format("%s: %.2f jednostki (kalorie: %.2f)", ingredient.getName(), quantity, calories);
+                dialogLayout.add(new Div(new Span(ingredientInfo)));
+            });
         } else {
             dialogLayout.add(new Div(new Span("Brak składników")));
         }
